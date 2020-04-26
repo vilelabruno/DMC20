@@ -45,10 +45,6 @@ class DMC20_Metric(object):
         # Returns final value of metric based on error and weight
         return error/(weight + 1e-38)
 
-#del useless columns
-del train["Unnamed: 0"], train["salesPrice|mean"]
-del train["salesPrice|std"], train["salesPrice|sum"]
-
 #trat promotion col
 train["promotion"][train["promotion"].isnull()] = 0
 train["promotion"][train["promotion"] != 0] = 1
@@ -56,15 +52,19 @@ train["promotion"][train["promotion"] != 0] = 1
 train.sort_values(by=["weekNumber"])
 X_test = train[train["weekNumber"] == 12]
 X_train = train[train["weekNumber"] != 12]
-y_train = X_train.pop('order|sum')
+y_train = X_train.pop('order')
 w_train = X_train.pop('simulationPrice')
 
-y_test = X_test.pop('order|sum')
+y_test = X_test.pop('order')
 w_test = X_test.pop('simulationPrice')
 
+print('Instantiating catboost model...')
 model = cat.CatBoostRegressor(eval_metric=DMC20_Metric())
 
-print('Instantiating catboost model...')
 print('Training catboost model...')
 model.fit(X_train, y=y_train, eval_set=[(X_test, y_test)])
+
+print('Predicting...')
 resp = model.predict(X_test)
+
+print(resp)
