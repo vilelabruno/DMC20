@@ -4,3 +4,4 @@ catboost
 sklearn
 matplotlib
 statsmodels
+xgboost
