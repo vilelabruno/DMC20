@@ -106,7 +106,7 @@ dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)
 results={}
 
 bst = xgb.train(params, dtrain=dtrain, num_boost_round=1000, obj=squared_log,
-                                        feval=rmsle, evals=[(dtrain, 'dtrain'), (dvalid, 'dvalid')], evals_result=results)
+                        feval=rmsle, evals=[(dtrain, 'dtrain'), (dvalid, 'dvalid')], evals_result=results)
 
 '''Prediction'''
 preds = bst.predict(dvalid)
