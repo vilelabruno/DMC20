@@ -104,3 +104,9 @@ bst = xgb.train({'tree_method': 'exact', 'seed': 1994, 'eta': 0.1}, dtrain=dtrai
 
 '''Prediction'''
 preds = bst.predict(dvalid)
+
+'''Final Score'''
+score = preds.copy()
+score = dvalid.get_weight() * preds
+score[(dvalid.get_label() - preds) < 0] = 0.6 * dvalid.get_weight()[(dvalid.get_label() - preds) < 0] * (dvalid.get_label()[(dvalid.get_label() - preds) < 0] - preds[(dvalid.get_label() - preds) < 0])
+print('Final Score: '+str(score.sum()))
