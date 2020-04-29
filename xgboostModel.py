@@ -77,6 +77,9 @@ def rmcwsle(predt: np.ndarray, dtrain: xgb.DMatrix) -> [str, float]:
     elements = np.power((np.log1p(predt) - np.log1p(y)), 2)
     return 'RMCWSLE', float(np.sqrt(np.sum(elements) / ((predt + 1)+(np.log1p(price)*(y - predt)))))
 
+'''Deleting promotion column'''
+del train["promotion"]
+
 '''Ordering by weekNumber'''
 train.sort_values(by=["weekNumber"])
 X_test = train[train["weekNumber"] == 12]
@@ -96,7 +99,7 @@ dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
 dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)
 results={}
 
-bst = xgb.train({'tree_method': 'exact', 'seed': 1994, 'eta': 0.001}, dtrain=dtrain, num_boost_round=1000, obj=squared_log,
+bst = xgb.train({'tree_method': 'exact', 'seed': 1994, 'eta': 0.1}, dtrain=dtrain, num_boost_round=1000, obj=squared_log,
                                         feval=rmsle, evals=[(dtrain, 'dtrain'), (dvalid, 'dvalid')], evals_result=results)
 
 '''Prediction'''
