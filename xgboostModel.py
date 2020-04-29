@@ -97,12 +97,15 @@ w_test = X_test.pop('simulationPrice')
 
 print("\nSetting up data for XGBoost ...")
 '''XGBoost parameters'''
+params = {'tree_method': 'exact', 
+          'seed': 1994, 
+          'eta': 0.1}
 
 dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
 dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)
 results={}
 
-bst = xgb.train({'tree_method': 'exact', 'seed': 1994, 'eta': 0.1}, dtrain=dtrain, num_boost_round=1000, obj=squared_log,
+bst = xgb.train(params, dtrain=dtrain, num_boost_round=1000, obj=squared_log,
                                         feval=rmsle, evals=[(dtrain, 'dtrain'), (dvalid, 'dvalid')], evals_result=results)
 
 '''Prediction'''
