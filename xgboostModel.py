@@ -80,6 +80,9 @@ def rmcwsle(predt: np.ndarray, dtrain: xgb.DMatrix) -> [str, float]:
 '''Deleting promotion column'''
 del train["promotion"]
 
+'''Promotion times Price'''
+train["weekPromotion"] = train["weekPromotion"] * train["simulationPrice"]
+
 '''Ordering by weekNumber'''
 train.sort_values(by=["weekNumber"])
 X_test = train[train["weekNumber"] == 12]
