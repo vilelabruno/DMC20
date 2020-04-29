@@ -21,7 +21,7 @@ for i in range(0,13):
     orders["weekPromotion"][((orders[1] > (pd.to_datetime("2018-01-01") + timedelta(days=(14*i)))) & (orders[1] < (pd.to_datetime("2018-01-01") + timedelta(days=(14*(i+1)))))) & (orders["weekNumber"] == i)] = 1
     orders["weekPromotion"][((orders[2] > (pd.to_datetime("2018-01-01") + timedelta(days=(14*i)))) & (orders[2] < (pd.to_datetime("2018-01-01") + timedelta(days=(14*(i+1)))))) & (orders["weekNumber"] == i)] = 1
 
-gp = orders.groupby(["itemID", "weekNumber"]).agg({"order": "sum"})
+gp = orders.groupby(["itemID", "weekNumber"]).agg({"order": "sum", "weekPromotion": "sum"})
 #gp = orders.groupby(["weekNumber"]).agg({"order": sum})#this lines contains the plot for orders                                                  
 #gp.reset_index(inplace=True)                           #this lines contains the plot for orders                      
 #gp = gp.sort_values(by=["weekNumber"])                 #this lines contains the plot for orders                              
