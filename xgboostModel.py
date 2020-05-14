@@ -79,26 +79,43 @@ def rmcwsle(predt: np.ndarray, dtrain: xgb.DMatrix) -> [str, float]:
     return 'RMCWSLE', float(np.sqrt(np.sum(elements) / ((predt + 1)+(np.log1p(price)*(y - predt)))))
 
 '''Feature eng'''
-train["weekPromotion"] = train["weekPromotion"].astype(int)  
-
-'''Target Encoding'''
-#train['order_bins'] = pd.cut(train.order, [0, 50, 100, 150, 200, 250])
-#print('Max sale:', train.order.max())
-#print('Min sale:', train.order.min())
-#print('Avg sale:', train.sales.mean())
-plt.plot(train['order'])
-plt.show()
-
+train["weekPromotion"] = train["weekPromotion"].astype(int)
+train["order"][train["order"] == 0] = 0 + 1e-6
+train["diffSimRec"] = train["recommendedRetailPrice"] - train["simulationPrice"]
+#plt.plot(train["diffSimRec"])
+#plt.show()
+#
 '''Deleting promotion column'''
-del train["promotion"]
+del train["promotion"], train["weekPromotion"]
 
-'''Promotion times Price'''
-train["weekPromotion"] = train["weekPromotion"] * train["simulationPrice"]
+#'''Promotion times Price'''
+#train["weekPromotion"] = train["weekPromotion"] * train["simulationPrice"]
 
 '''Ordering by weekNumber'''
 train.sort_values(by=["weekNumber"])
 X_test = train[train["weekNumber"] == 12]
 X_train = train[train["weekNumber"] != 12]
+
+'''Target Encoding'''
+#train['order_bins'] = pd.cut(train.order, [0, 1000, 2000, 3000, 4000, 5000])
+X_train['order_0'] = 0
+X_train['order_1'] = 0
+X_train['order_2'] = 0
+X_train['order_3'] = 0
+X_train['order_4'] = 0
+X_train['order_5'] = 0
+
+X_train['order_0'][X_train['order'] == 0] = 1
+X_train['order_1'][(X_train['order'] > 0) & (X_train['order'] <= 100)] = 1
+X_train['order_2'][(X_train['order'] > 100) & (X_train['order'] <= 300)] = 1
+X_train['order_3'][(X_train['order'] > 300) & (X_train['order'] <= 500)] = 1
+X_train['order_4'][(X_train['order'] > 500) & (X_train['order'] <= 1000)] = 1
+X_train['order_5'][X_train['order'] > 1000] = 1
+
+X_test = X_test.merge(X_train.groupby("itemID").agg({ 'order_0': 'max', 'order_1': 'max', 'order_2': 'max', 'order_3': 'max', 'order_4': 'max', 'order_5': 'max' }), how='left', on='itemID')
+#X_test = X_test.merge(X_train.groupby("itemID").agg({ 'order_0': 'std', 'order_1': 'std', 'order_2': 'std', 'order_3': 'std', 'order_4': 'std', 'order_5': 'std' }), how='left', on='itemID')
+#
+#del X_train["order_0"], X_train["order_1"], X_train["order_2"], X_train["order_3"], X_train["order_4"], X_train["order_5"]
 
 '''Popping order and simulationPrice columns'''
 y_train = X_train.pop('order')
