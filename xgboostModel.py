@@ -1,6 +1,7 @@
 import numpy as np
 import xgboost as xgb
 import pandas as pd
+import matplotlib.pyplot as plt
 print('Setting random seed...')
 seed = 1234
 np.random.seed(seed)
@@ -76,6 +77,17 @@ def rmcwsle(predt: np.ndarray, dtrain: xgb.DMatrix) -> [str, float]:
     predt[predt < -1] = -1 + 1e-6
     elements = np.power((np.log1p(predt) - np.log1p(y)), 2)
     return 'RMCWSLE', float(np.sqrt(np.sum(elements) / ((predt + 1)+(np.log1p(price)*(y - predt)))))
+
+'''Feature eng'''
+train["weekPromotion"] = train["weekPromotion"].astype(int)  
+
+'''Target Encoding'''
+#train['order_bins'] = pd.cut(train.order, [0, 50, 100, 150, 200, 250])
+#print('Max sale:', train.order.max())
+#print('Min sale:', train.order.min())
+#print('Avg sale:', train.sales.mean())
+plt.plot(train['order'])
+plt.show()
 
 '''Deleting promotion column'''
 del train["promotion"]
