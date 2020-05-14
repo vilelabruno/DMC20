@@ -23,6 +23,7 @@ for i in range(0,13):
 
 gp = orders.groupby(["itemID", "weekNumber"]).agg({"order": "sum", "weekPromotion": "sum"})
 gp["weekPromotion"] =  gp["weekPromotion"]/gp["weekPromotion"]
+gp.fillna(0)
 #gp = orders.groupby(["weekNumber"]).agg({"order": sum})#this lines contains the plot for orders                                                  
 #gp.reset_index(inplace=True)                           #this lines contains the plot for orders                      
 #gp = gp.sort_values(by=["weekNumber"])                 #this lines contains the plot for orders                              
