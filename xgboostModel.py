@@ -116,3 +116,7 @@ score = preds.copy()
 score = dvalid.get_weight() * preds
 score[(dvalid.get_label() - preds) < 0] = 0.6 * dvalid.get_weight()[(dvalid.get_label() - preds) < 0] * (dvalid.get_label()[(dvalid.get_label() - preds) < 0] - preds[(dvalid.get_label() - preds) < 0])
 print('Final Score: '+str(score.sum()))
+
+'''Exact Predictions'''
+equals = preds[preds == dvalid.get_label()]
+print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds)))
