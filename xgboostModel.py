@@ -77,6 +77,12 @@ def rmcwsle(predt: np.ndarray, dtrain: xgb.DMatrix) -> [str, float]:
     elements = np.power((np.log1p(predt) - np.log1p(y)), 2)
     return 'RMCWSLE', float(np.sqrt(np.sum(elements) / ((predt + 1)+(np.log1p(price)*(y - predt)))))
 
+'''Deleting promotion column'''
+del train["promotion"]
+
+'''Promotion times Price'''
+train["weekPromotion"] = train["weekPromotion"] * train["simulationPrice"]
+
 '''Ordering by weekNumber'''
 train.sort_values(by=["weekNumber"])
 X_test = train[train["weekNumber"] == 12]
@@ -91,13 +97,26 @@ w_test = X_test.pop('simulationPrice')
 
 print("\nSetting up data for XGBoost ...")
 '''XGBoost parameters'''
+params = {'tree_method': 'exact', 
+          'seed': 1994, 
+          'eta': 0.1}
 
 dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
 dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)
 results={}
 
-bst = xgb.train({'tree_method': 'exact', 'seed': 1994, 'eta': 0.001}, dtrain=dtrain, num_boost_round=1000, obj=squared_log,
-                                        feval=rmsle, evals=[(dtrain, 'dtrain'), (dvalid, 'dvalid')], evals_result=results)
+bst = xgb.train(params, dtrain=dtrain, num_boost_round=1000, obj=squared_log,
+                        feval=rmsle, evals=[(dtrain, 'dtrain'), (dvalid, 'dvalid')], evals_result=results)
 
 '''Prediction'''
 preds = bst.predict(dvalid)
+
+'''Final Score'''
+score = preds.copy()
+score = dvalid.get_weight() * preds
+score[(dvalid.get_label() - preds) < 0] = 0.6 * dvalid.get_weight()[(dvalid.get_label() - preds) < 0] * (dvalid.get_label()[(dvalid.get_label() - preds) < 0] - preds[(dvalid.get_label() - preds) < 0])
+print('Final Score: '+str(score.sum()))
+
+'''Exact Predictions'''
+equals = preds[preds.astype(int) == dvalid.get_label().astype(int)]
+print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds)))
