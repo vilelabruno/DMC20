@@ -5,3 +5,4 @@ number-of-zeros,max,params,obs
 41,39.645855,{'tree_method': 'exact''seed': 1994'eta': 0.1 'nrounds':1000}, com target encoding usando std
 5999,23.660542,{'tree_method': 'exact''seed': 1994'eta': 0.1 'nrounds':1000}, com target encoding usando sum
 5999,23.660542,{'tree_method': 'exact''seed': 1994'eta': 0.1 'nrounds':1000}, com target encoding usando max
+1706,1300.3937,{'tree_method': 'exact''seed': 1994'eta': 0.1 'nrounds':1000}, função objetivo padrão
