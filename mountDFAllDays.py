@@ -26,5 +26,6 @@ for i in range(0,9):
     if i == 6:
         continue
     aux = pd.read_csv("data/"+str(i)+".csv")
+    aux["a"] = aux["a"] + 1
     aux = aux.rename(columns={"a": "itemID", "b": "date", "c": "order", "d": "salesPrice"})
     orders = pd.concat([orders, aux])
