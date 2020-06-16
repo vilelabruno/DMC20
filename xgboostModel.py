@@ -2,7 +2,7 @@ import numpy as np
 import xgboost as xgb
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.grid_search import GridSearchCV
+#from sklearn.grid_search import GridSearchCV
 print('Setting random seed...')
 seed = 1234
 np.random.seed(seed)
@@ -161,11 +161,11 @@ params = {'tree_method': 'exact',
 #}
 sumPreds = np.zeros(10464)
 
-xgb_model = xgb.XGBRegressor(base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
+xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
        gamma=0, learning_rate=0.07, max_delta_step=0, max_depth=3,
        min_child_weight=1.5, n_estimators=100, nthread=-1, reg_alpha=0.75, reg_lambda=0.45,
        scale_pos_weight=1, seed=42, subsample=0.6)
-for i in range(0,1):    
+for i in range(0,15):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
     #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)       
 
@@ -204,6 +204,12 @@ for i in range(0,1):
 future = train[train["date"] > pd.to_datetime("2018-06-17")]
 future = future.groupby("itemID").agg({"order": "sum"})
 dif = pd.DataFrame(sumPreds - future["order"]) 
+sumPreds = pd.DataFrame(sumPreds)
+score = pd.DataFrame(np.zeros(10464))
+w = X_test["recommendedRetailPrice"].fillna(1)
+score = sumPreds * w
+score[(future - sumPreds) < 0] = (future[(future - sumPreds) < 0] - sumPreds[(future - sumPreds) < 0]) * (0.6 * w[(future - sumPreds) < 0])
+
 print(dif.describe())
 #
 #'''Final Score'''
