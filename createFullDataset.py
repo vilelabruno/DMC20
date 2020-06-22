@@ -14,4 +14,4 @@ orderInfos = orders.merge(infos, how='left', on='itemID')
 
 fullData = orderInfos.merge(items, how='left', on='itemID')
 
-fullData.to_csv('data/trainNew.csv', index=False)
+fullData.to_csv('data/train2weeks.csv', index=False)

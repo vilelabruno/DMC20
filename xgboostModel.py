@@ -132,6 +132,7 @@ X_train = train[train["date"] < pd.to_datetime("2018-06-17")]
 #X_test = train[train["date"] >= pd.to_datetime("2018-07-01")]
 #X_train = train[train["date"] < pd.to_datetime("2018-07-01")]
 
+w = X_test["recommendedRetailPrice"].fillna(1)
 del X_train["date"], X_test["date"]
 
 '''Popping order and simulationPrice columns'''
@@ -159,17 +160,17 @@ params = {'tree_method': 'exact',
 #    'reg_lambda':[1e-5, 1e-2, 0.45],
 #    'subsample':[0.6,0.95]  
 #}
-sumPreds = np.zeros(10464)
+sumPreds = pd.DataFrame(np.zeros(10464))
 
 xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
        gamma=0, learning_rate=0.07, max_delta_step=0, max_depth=3,
-       min_child_weight=1.5, n_estimators=100, nthread=-1, reg_alpha=0.75, reg_lambda=0.45,
+       min_child_weight=1.5, n_estimators=100, nthread=7, reg_alpha=0.75, reg_lambda=0.45,
        scale_pos_weight=1, seed=42, subsample=0.6)
-for i in range(0,15):    
+for i in range(0,2):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
     #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)       
 
-    xgb_model.fit(X_train,y_train)       
+    xgb_model.fit(X_train,y_train, eval_set=[(X_test, y_test)], early_stopping_rounds=30)       
     #gsearch1 = GridSearchCV(estimator = xgb_model, param_grid = parameters_for_testing, n_jobs=6,iid=False, verbose=10,scoring='neg_mean_squared_error')
     #gsearch1.fit(X_train,y_train)
     #print (gsearch1.grid_scores_)
@@ -188,29 +189,37 @@ for i in range(0,15):
     X_train["order"] = y_train
     X_test["order"] = preds
     preds[preds < 0 ] = 0
-    score = preds * X_test["recommendedRetailPrice"]
-    score[(y_test - preds) < 0] = (y_test[(y_test - preds) < 0] - preds[(y_test - preds) < 0]) * (0.6 * X_test["recommendedRetailPrice"][(y_test - preds) < 0])
+    preds = preds.astype(int)
+
+    score = preds * w
+    score[(y_test - preds) < 0] = (y_test[(y_test - preds) < 0] - preds[(y_test - preds) < 0]) * (0.6 * w[(y_test - preds) < 0])
     X_test["order"][X_test["order"] < 0] = 0
     X_test["order"] = X_test["order"].astype(int)
     print(pd.DataFrame(score).describe())
     print(pd.DataFrame(y_test - preds).describe())
+    print(sum(score))
+    print(sum(y_test*w))
     
-    sumPreds = sumPreds + preds
+    #sumPreds = sumPreds + preds
     X_train = pd.concat([X_train, X_test])
     X_test["day"] = X_test["day"]+1
+    if X_test["weekDay"].iloc[0] == 6:
+        X_test["weekNumber"] = X_test["weekNumber"] + 1 
+        X_test["weekDay"] = 0
+    else:
+        X_test["weekDay"] = X_test["weekDay"]+1
     y_train = X_train.pop('order')
     y_test = X_test.pop('order')
 
-future = train[train["date"] > pd.to_datetime("2018-06-17")]
-future = future.groupby("itemID").agg({"order": "sum"})
-dif = pd.DataFrame(sumPreds - future["order"]) 
-sumPreds = pd.DataFrame(sumPreds)
-score = pd.DataFrame(np.zeros(10464))
-w = X_test["recommendedRetailPrice"].fillna(1)
-score = sumPreds * w
-score[(future - sumPreds) < 0] = (future[(future - sumPreds) < 0] - sumPreds[(future - sumPreds) < 0]) * (0.6 * w[(future - sumPreds) < 0])
-
-print(dif.describe())
+#sumPreds.to_csv("out1.csv")
+#future = train[train["date"] > pd.to_datetime("2018-06-17")]
+#future = future.groupby("itemID").agg({"order": "sum"})
+#dif = pd.DataFrame(sumPreds - future["order"]) 
+#w = pd.DataFrame(w)
+#score = pd.DataFrame(sumPreds * w[0])
+#score["0"][(future["order"] - sumPreds["0"]) < 0] = (future["order"][(future["order"] - sumPreds["0"]) < 0] - sumPreds["0"][(future["order"] - sumPreds["0"]) < 0]) * (0.6 * w[0][(future["order"] - sumPreds["0"]) < 0])
+#
+#print(dif.describe())
 #
 #'''Final Score'''
 #score = preds.copy()
