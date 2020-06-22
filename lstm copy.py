@@ -41,3 +41,15 @@ model_lstm.add(LSTM(32, input_shape=(1,10)))
 model_lstm.add(Dense(1))
 model_lstm.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 
+# Reshape the data between -1 and 1 and to 3D
+from sklearn.preprocessing import StandardScaler,MinMaxScaler
+scaler = StandardScaler()
+scaler = MinMaxScaler(feature_range=(-1, 1))
+
+x_train_scaled = scaler.fit_transform(X_train)
+x_valid_scaled = scaler.fit_transform(X_test)
+x_train_reshaped = x_train_scaled.reshape((x_train_scaled.shape[0], 1, x_train_scaled.shape[1]))
+x_val_resaped = x_valid_scaled.reshape((x_valid_scaled.shape[0], 1, x_valid_scaled.shape[1]))
+
+history = model_lstm.fit(x_train_reshaped, y_train, validation_data=(x_val_resaped, y_test),epochs=5, batch_size=100, verbose=2, shuffle=False)
+y_pre = model_lstm.predict(x_val_resaped)
