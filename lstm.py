@@ -24,6 +24,8 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
 from keras.layers import LSTM
 from keras.optimizers import Adam
+import shap
+
 
 # --- Disable Keras Warnings ---
 import os
@@ -36,11 +38,11 @@ np.random.seed(seed)
 
 print("Importing Data..."+'\n')
 train = pd.read_csv("data/trainAllDays.csv")
+train = train[train["itemID"] != 10464]
 train["date"] = pd.to_datetime(train["date"])
 train.sort_values(by=["date"])
 train["weekDay"] = train["date"].dt.day_name()   
 train = pd.get_dummies(train, columns=["weekDay"]) 
-train = train[train["itemID"] != 10464]
 
 print("Feature Engineering..."+'\n')
 train['category1_2'] = train['category1'] * train['category2']
@@ -81,7 +83,7 @@ print("Instantiating Model..."+'\n')
 hidden_nodes = 100
 output_labels = 1
 model_lstm = Sequential()
-model_lstm.add(LSTM(hidden_nodes, return_sequences=True, input_shape=(1,21)))
+model_lstm.add(LSTM(hidden_nodes, return_sequences=True, input_shape=(1,len(x_train.columns))))
 model_lstm.add(Dropout(0.2))
 model_lstm.add(LSTM(hidden_nodes))
 model_lstm.add(Dropout(0.2))
@@ -103,6 +105,7 @@ w = pd.DataFrame()
 
 print("TRAINING START"+'\n')
 days = 4
+n_epochs = 1
 for i in range(0, days):
     print("---- DAY "+str(i)+" ----")
     x_train_scaled = scaler.fit_transform(x_train)
@@ -116,7 +119,17 @@ for i in range(0, days):
     w_train_reshaped = w_train.values.reshape(-1, 1)
     w_val_reshaped = w_test.values.reshape(-1, 1)
 
-    model_lstm.fit(x_train_reshaped, y_train_reshaped, validation_data=(x_val_reshaped, y_val_reshaped),epochs=15, batch_size=2048, verbose=2, shuffle=False)
+    model_lstm.fit(x_train_reshaped, y_train_reshaped, validation_data=(x_val_reshaped, y_val_reshaped),epochs=n_epochs, batch_size=2048, verbose=2, shuffle=False)
+    DE = shap.DeepExplainer(model_lstm, x_train_reshaped) # X_train is 3d numpy.ndarray
+    shap_values = DE.shap_values(x_val_reshaped, check_additivity=False) # X_validate is 3d numpy.ndarray
+
+    shap.initjs()
+    shap.summary_plot(
+        shap_values[0], 
+        x_val_reshaped,
+        feature_names=x_train.columns,
+        max_display=50,
+        plot_type='bar')
 
     y_pre = model_lstm.predict(x_val_reshaped)
     y_pre = pd.DataFrame(y_pre)
@@ -140,7 +153,7 @@ for i in range(0, days):
     x_test["order"] = y_pre[0]
     preds[preds < 0 ] = 0
     preds = preds.astype(int)
-    
+
     x_train = pd.concat([x_train, x_test])
     x_test["day"] = x_test["day"]+1
     if x_test["weekDay"].iloc[0] == 6:
