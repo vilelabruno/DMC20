@@ -17,18 +17,18 @@ print('Setting random seed...')
 seed = 1234
 np.random.seed(seed)
 train = pd.read_csv("data/trainAllDays.csv")
-train["time"] = pd.to_datetime(train["time"])
-train.sort_values(by=["time"])
-train["weekDay"] = train["time"].dt.day_name()   
+train["date"] = pd.to_datetime(train["date"])
+train.sort_values(by=["date"])
+train["weekDay"] = train["date"].dt.day_name()   
 train = pd.get_dummies(train, columns=["weekDay"]) 
 
 del train["promotion"]
 
-X_test = train[train["time"] > pd.to_datetime("2018-06-01")]
-X_train = train[train["time"] <= pd.to_datetime("2018-06-01")]
+X_test = train[train["date"] > pd.to_datetime("2018-06-01")]
+X_train = train[train["date"] <= pd.to_datetime("2018-06-01")]
 
 
-del X_train["time"], X_test["time"]
+del X_train["date"], X_test["date"]
 
 '''Popping order and simulationPrice columns'''
 y_train = X_train.pop('order')
@@ -37,7 +37,7 @@ y_test = X_test.pop('order')
 w_test = X_test.pop('simulationPrice')
 
 model_lstm = Sequential()
-model_lstm.add(LSTM(32, input_shape=(1,10)))
+model_lstm.add(LSTM(32, input_shape=(1,16)))
 model_lstm.add(Dense(1))
 model_lstm.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 
