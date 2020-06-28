@@ -42,7 +42,7 @@ train = train[train["itemID"] != 10464]
 train["date"] = pd.to_datetime(train["date"])
 train.sort_values(by=["date"])
 train["weekDay"] = train["date"].dt.day_name()   
-train = pd.get_dummies(train, columns=["weekDay"]) 
+#train = pd.get_dummies(train, columns=["weekDay"])
 
 print("Feature Engineering..."+'\n')
 train['category1_2'] = train['category1'] * train['category2']
@@ -89,10 +89,8 @@ model_lstm.add(LSTM(hidden_nodes))
 model_lstm.add(Dropout(0.2))
 model_lstm.add(Dense(units=output_labels))
 model_lstm.add(Activation('linear'))
-
 opt = Adam(learning_rate=0.001)
 model_lstm.compile(loss='mean_squared_error', optimizer=opt, metrics=['accuracy'])
-
 # Reshape the data between -1 and 1 and to 3D
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
 scaler = StandardScaler()
@@ -104,7 +102,7 @@ y = pd.DataFrame()
 w = pd.DataFrame()
 
 print("TRAINING START"+'\n')
-days = 4
+days = 14
 n_epochs = 1
 for i in range(0, days):
     print("---- DAY "+str(i)+" ----")
@@ -120,20 +118,20 @@ for i in range(0, days):
     w_val_reshaped = w_test.values.reshape(-1, 1)
 
     model_lstm.fit(x_train_reshaped, y_train_reshaped, validation_data=(x_val_reshaped, y_val_reshaped),epochs=n_epochs, batch_size=2048, verbose=2, shuffle=False)
-    DE = shap.DeepExplainer(model_lstm, x_train_reshaped) # X_train is 3d numpy.ndarray
-    shap_values = DE.shap_values(x_val_reshaped, check_additivity=False) # X_validate is 3d numpy.ndarray
+    #DE = shap.DeepExplainer(model_lstm, x_train_reshaped) # X_train is 3d numpy.ndarray
+    #shap_values = DE.shap_values(x_val_reshaped, check_additivity=False) # X_validate is 3d numpy.ndarray
 
-    shap.initjs()
-    shap.summary_plot(
-        shap_values[0], 
-        x_val_reshaped,
-        feature_names=x_train.columns,
-        max_display=50,
-        plot_type='bar')
+    #shap.initjs()
+    #shap.summary_plot(
+    #    shap_values[0], 
+    #    x_val_reshaped,
+    #    feature_names=x_train.columns,
+    #    max_display=50,
+    #    plot_type='bar')
 
     y_pre = model_lstm.predict(x_val_reshaped)
-    y_pre = pd.DataFrame(y_pre)
-    preds[i] = y_pre[0]
+    #y_pre = pd.DataFrame(y_pre)
+    preds[i] = np.concatenate(y_pre, axis=0)
 
     '''Daily Score'''
     y_test = y_test.reset_index(drop=True)
@@ -150,7 +148,7 @@ for i in range(0, days):
     print('Day '+str(i)+' Exact Predictions: '+str(len(equals))+' of '+str(len(preds)))
 
     x_train["order"] = y_train
-    x_test["order"] = y_pre[0]
+    x_test["order"] = np.concatenate(y_pre, axis=0)
     preds[preds < 0 ] = 0
     preds = preds.astype(int)
 
@@ -163,7 +161,6 @@ for i in range(0, days):
         x_test["weekDay"] = x_test["weekDay"]+1
     y_train = x_train.pop('order')
     y_test = x_test.pop('order')
-
     print("---------------"+'\n')
 print("END OF TRAINING")
 
