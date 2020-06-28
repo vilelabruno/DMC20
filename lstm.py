@@ -65,7 +65,8 @@ train.sort_values(by=["date"])
 
 x_test = train[train["date"] == pd.to_datetime("2018-06-01")]
 x_train = train[train["date"] < pd.to_datetime("2018-06-01")]
-
+X_TEST = train[train["date"] >= pd.to_datetime("2018-06-01")]
+X_TEST = train[train["date"] < pd.to_datetime("2018-06-15")]
 
 del x_train["date"], x_test["date"]
 
@@ -78,6 +79,8 @@ y_train = x_train.pop('order')
 w_train = x_train.pop('simulationPrice')
 y_test = x_test.pop('order')
 w_test = x_test.pop('simulationPrice')
+Y_TEST = X_TEST.pop('order')
+W_TEST = X_TEST.pop('simulationPrice')
 
 print("Instantiating Model..."+'\n')
 hidden_nodes = 100
@@ -165,16 +168,21 @@ for i in range(0, days):
 print("END OF TRAINING")
 
 '''Final Score'''
-score = w * preds
-score[(y - preds) < 0] = 0.6 * w[(y - preds) < 0] * (y[(y - preds) < 0] - preds[(y - preds) < 0])
-print('Final Score: '+str(score.values.sum()))
+score = w_test * preds
+score[(Y_TEST - preds) < 0] = 0.6 * w_test[(Y_TEST - preds) < 0] * (Y_TEST[(Y_TEST - preds) < 0] - preds[(Y_TEST - preds) < 0])
+print('Final Score: '+str(SCORE.values.sum()))
+#print(score.describe())
+#print((y - preds).describe())
 
 '''Exact Predictions'''
 equals = preds[preds.astype(int) == y.astype(int)]
 equals = equals.dropna()
 print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
 
+print("Saving Results..."+'\n')
 #preds.to_csv("out/lstm.csv")
+
+print("   - THE END -   "+'\n')
 
 print("+----------------+")
 print("| Copyright 2020 |")
