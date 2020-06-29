@@ -193,6 +193,7 @@ for i in range(0,14):
 
     data = pd.DataFrame(data=values, index=keys, columns=["score"]).sort_values(by = "score", ascending=False)
     data.plot(kind='barh')
+    #fsdf
     #plt.show()
 
 #sumPreds.to_csv("out1.csv")
