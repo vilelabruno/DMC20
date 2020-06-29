@@ -72,8 +72,9 @@ train.fillna(0, inplace=True)
 #train["daysToLimiar"] = train["daysToLimiar"].astype(int)
 del train["limiarDate"]
 train["day"] = train["date"].dt.day
-train["classDay"] = train["day"]/10
+train["classDay"] = train["day"]/6
 train["classDay"] = train["classDay"].astype(int)
+#train = pd.get_dummies(train, columns=["classDay"])
 train["weekNumber"] = train["date"].dt.week
 train = train.merge(sp, on=["itemID", "weekNumber"], how="left")
 train["weekDay"] = train["date"].dt.weekday
@@ -136,6 +137,8 @@ xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.7, co
        scale_pos_weight=0.9, seed=42, subsample=0.7)
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
+X_train["diffPrice"] = X_train["recommendedRetailPrice"] - X_train["salesPrice"]
+X_test["diffPrice"] = X_test["recommendedRetailPrice"] - X_test["salesPrice"]
 xgb_model.fit(X_train,y_train)
 for i in range(0,14):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
