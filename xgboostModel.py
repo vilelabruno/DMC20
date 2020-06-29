@@ -130,7 +130,7 @@ params = {'tree_method': 'exact',
 #}
 sumPreds = pd.DataFrame(np.zeros(10464))
 #del  X_test["salesPrice"], X_test["recommendedRetailPrice"],  X_train["salesPrice"], X_train["recommendedRetailPrice"]
-xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.5, colsample_bylevel=1, colsample_bytree=0.6,
+xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.7, colsample_bylevel=0.6, colsample_bytree=0.6,
        gamma=0, learning_rate=0.07, max_delta_step=0, max_depth=3,
        min_child_weight=1.5, n_estimators=200, nthread=7, reg_alpha=0.75, reg_lambda=0.45,
        scale_pos_weight=1, seed=42, subsample=0.6)
