@@ -131,7 +131,7 @@ params = {'tree_method': 'exact',
 sumPreds = pd.DataFrame(np.zeros(10464))
 #del  X_test["salesPrice"], X_test["recommendedRetailPrice"],  X_train["salesPrice"], X_train["recommendedRetailPrice"]
 xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.7, colsample_bylevel=0.6, colsample_bytree=0.6,
-       gamma=0.1, learning_rate=0.01, max_delta_step=0, max_depth=3,
+       gamma=0.1, learning_rate=0.01, max_delta_step=0, max_depth=5,
        min_child_weight=1.5, n_estimators=200, nthread=7, reg_alpha=0.75, reg_lambda=0.45,
        scale_pos_weight=1, seed=42, subsample=0.6)
 w = pd.DataFrame(w)
@@ -140,8 +140,11 @@ xgb_model.fit(X_train,y_train)
 for i in range(0,14):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
     #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)     #todo 
-    
-    X_test["day"] = X_test["day"]+1
+    if X_test["day"].iloc[0] == 30:
+        X_test["day"] = 1
+        X_test["month"] = X_test["month"]+1 
+    else:
+        X_test["day"] = X_test["day"]+1
     X_test["daysToLimiar"] = X_test["daysToLimiar"]+1
     if X_test["weekDay"].iloc[0] == 7:
         X_test["weekNumber"] = X_test["weekNumber"] + 1 
