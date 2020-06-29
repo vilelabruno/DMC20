@@ -74,7 +74,7 @@ del train["limiarDate"]
 train["day"] = train["date"].dt.day
 train["classDay"] = train["day"]/6
 train["classDay"] = train["classDay"].astype(int)
-#train = pd.get_dummies(train, columns=["classDay"])
+train = pd.get_dummies(train, columns=["classDay"])
 train["weekNumber"] = train["date"].dt.week
 train = train.merge(sp, on=["itemID", "weekNumber"], how="left")
 train["weekDay"] = train["date"].dt.weekday
