@@ -11,8 +11,7 @@ print('Reading csv...')
 train = pd.read_csv('data/trainNew.csv')
 orders = pd.read_csv("data/orders.csv")
 limiar = pd.read_csv("limiar.csv")
-sp = pd.read_csv("salesPrice.csv")
-del limiar["Unnamed: 0"], sp["Unnamed: 0"]
+
 limiar["limiarDate"] =  pd.to_datetime(limiar["time"])
 del limiar["time"]
 train = train[train["itemID"] != 10464]
@@ -22,11 +21,7 @@ train = train[train["itemID"] != 10464]
 #train["order"][train["order"] == 0] = 0 + 1e-6
 #train["priceXCR"] = train["customerRating"] * train["simulationPrice"]
 train = train.merge(limiar, on="itemID", how="left")
-del train["salesPrice"]
-train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].mean()).rename(columns={"salesPrice": "salesPriceMean"}) , how="left", on="itemID")
-train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].std()).rename(columns={"salesPrice": "salesPriceStd"}) , how="left", on="itemID")
-train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].min()).rename(columns={"salesPrice": "salesPriceMin"}) , how="left", on="itemID")
-train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].max()).rename(columns={"salesPrice": "salesPriceMax"}) , how="left", on="itemID")
+
 
 train["brandNA"] = 0
 train["brandNA"][train["brand"] == 0] = 1
@@ -36,8 +31,6 @@ train["customerRatingCat"] = train["customerRating"].astype(int)
 train["customerRatingNA"] = 0
 train["customerRatingNA"][train["customerRating"] == 0] = 1
 train = pd.get_dummies(train, columns=["customerRatingCat"]) 
-#train = pd.get_dummies(train, columns=["category1"]) 
-#train = pd.get_dummies(train, columns=["category3"]) 
 
 
 ##plt.plot(train["diffSimRec"])
@@ -67,21 +60,17 @@ train["date"] = pd.to_datetime(train["date"])
 
 train["daysToLimiar"] = train["limiarDate"] - train["date"]
 train['daysToLimiar'] = pd.to_numeric(train['daysToLimiar'], errors='coerce')  
-
 train.fillna(0, inplace=True)  
 #train["daysToLimiar"] = train["daysToLimiar"].astype(int)
 del train["limiarDate"]
 train["day"] = train["date"].dt.day
-train["classDay"] = train["day"]/10
-train["classDay"] = train["classDay"].astype(int)
 train["weekNumber"] = train["date"].dt.week
-train = train.merge(sp, on=["itemID", "weekNumber"], how="left")
 train["weekDay"] = train["date"].dt.weekday
 
 train["month"] = train["date"].dt.month
 train.sort_values(by=["date"])
 X_test = train[train["date"] == pd.to_datetime("2018-06-17")]
-X_train = train[train["date"] <= pd.to_datetime("2018-06-17")]
+X_train = train[train["date"] < pd.to_datetime("2018-06-17")]
 #X_test = train[train["date"] >= pd.to_datetime("2018-07-01")]
 #X_train = train[train["date"] < pd.to_datetime("2018-07-01")]
 
@@ -107,7 +96,6 @@ y_train_day = train_day.pop('order')
 w_train = X_train.pop('simulationPrice')
 w_train_day = train_day.pop('simulationPrice')
 w_test = X_test.pop('simulationPrice') # qdo for prever colocar salesPrice= simulationPrice
-X_test["salesPrice"] = w_test
 y_train = X_train.pop('order')
 y_test = X_test.pop('order')
 
@@ -132,79 +120,62 @@ sumPreds = pd.DataFrame(np.zeros(10464))
 #del  X_test["salesPrice"], X_test["recommendedRetailPrice"],  X_train["salesPrice"], X_train["recommendedRetailPrice"]
 xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.5, colsample_bylevel=1, colsample_bytree=1,
        gamma=0, learning_rate=0.07, max_delta_step=0, max_depth=3,
-       min_child_weight=1.5, n_estimators=200, nthread=7, reg_alpha=0.75, reg_lambda=0.45,
+       min_child_weight=1.5, n_estimators=100, nthread=7, reg_alpha=0.75, reg_lambda=0.45,
        scale_pos_weight=1, seed=42, subsample=0.6)
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
-for i in range(0,14):    
-    #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
-    #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)     #todo 
-    
-    X_test["day"] = X_test["day"]+1
-    X_test["daysToLimiar"] = X_test["daysToLimiar"]+1
-    if X_test["weekDay"].iloc[0] == 7:
-        X_test["weekNumber"] = X_test["weekNumber"] + 1 
-        X_test["weekDay"] = 0
-    else:
-        X_test["weekDay"] = X_test["weekDay"]+1
-    xgb_model.fit(X_train,y_train)
-    #gsearch1 = GridSearchCV(estimator = xgb_model, param_grid = parameters_for_testing, n_jobs=6,iid=False, verbose=10,scoring='neg_mean_squared_error')
-    #gsearch1.fit(X_train,y_train)
-    #print (gsearch1.grid_scores_)
-    #print('best params')
-    #print (gsearch1.best_params_)
-    #print('best score')
-    #print (gsearch1.best_score_)
-    #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
-    #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)
-    #results={}
-    #
-    #bst = xgb.train(params, dtrain=dtrain, num_boost_round=100, evals=[(dtrain, 'dtrain'), (dvalid, 'dvalid')], evals_result=results)
-    #
-    #'''Prediction'''
-    preds = xgb_model.predict(X_test)
-    
-    X_train["order"] = y_train
-    X_test["order"] = preds
+#dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
+#dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)     #todo 
 
-    preds[preds < 0 ] = 0
-    preds = preds.astype(int)
-    y_test = train["order"][train["date"] == pd.to_datetime("2018-06-"+str(18+i))]
+xgb_model.fit(X_train,y_train)       
+#gsearch1 = GridSearchCV(estimator = xgb_model, param_grid = parameters_for_testing, n_jobs=6,iid=False, verbose=10,scoring='neg_mean_squared_error')
+#gsearch1.fit(X_train,y_train)
+#print (gsearch1.grid_scores_)
+#print('best params')
+#print (gsearch1.best_params_)
+#print('best score')
+#print (gsearch1.best_score_)
+#dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
+#dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)
+#results={}
+#
+#bst = xgb.train(params, dtrain=dtrain, num_boost_round=100, evals=[(dtrain, 'dtrain'), (dvalid, 'dvalid')], evals_result=results)
+#
+#'''Prediction'''
+preds = xgb_model.predict(X_test)
 
-    y_test = np.array(y_test)
-    preds = np.array(preds)
-    score = preds * w
-    score[(y_test - preds) < 0] = (y_test[(y_test - preds) < 0] - preds[(y_test - preds) < 0]) * (0.6 * w[(y_test - preds) < 0])
-    X_test["order"][X_test["order"] < 0] = 0
-    X_test["order"] = X_test["order"].astype(int)
-    print(pd.DataFrame(score).describe())
-    print(pd.DataFrame(y_test - preds).describe())
-    print(sum(score))
-    print(sum(y_test*w))
-    
-    #sumPreds = sumPreds + preds
-    X_train = pd.concat([X_train, X_test])
+X_train["order"] = y_train
+X_test["order"] = preds
+preds[preds < 0 ] = 0
+preds = preds.astype(int)
+y_test = train["order"][train["date"] == pd.to_datetime("2018-06-"+str(17+i))]
+score = preds * w
+score[(y_test - preds) < 0] = (y_test[(y_test - preds) < 0] - preds[(y_test - preds) < 0]) * (0.6 * w[(y_test - preds) < 0])
+X_test["order"][X_test["order"] < 0] = 0
+X_test["order"] = X_test["order"].astype(int)
+print(pd.DataFrame(score).describe())
+print(pd.DataFrame(y_test - preds).describe())
+print(sum(score))
+print(sum(y_test*w))
 
-    
+#sumPreds = sumPreds + preds
 
-    train_day = X_train[X_train["weekDay"] == X_test["weekDay"].iloc[0]]
-    y_train_day = train_day.pop('order')
-    y_train = X_train.pop('order')
-    y_test = X_test.pop('order')
-    feature_important = xgb_model.get_booster().get_score(importance_type='gain')
-    keys = list(feature_important.keys())
-    values = list(feature_important.values())
-
-    data = pd.DataFrame(data=values, index=keys, columns=["score"]).sort_values(by = "score", ascending=False)
-    data.plot(kind='barh')
-    #fsdf
-    #plt.show()
+train_day = X_train[X_train["weekDay"] == X_test["weekDay"].iloc[0]]
+y_train_day = train_day.pop('order')
+y_train = X_train.pop('order')
+y_test = X_test.pop('order')
+feature_important = xgb_model.get_booster().get_score(importance_type='gain')
+keys = list(feature_important.keys())
+values = list(feature_important.values())
+data = pd.DataFrame(data=values, index=keys, columns=["score"]).sort_values(by = "score", ascending=False)
+data.plot(kind='barh')
+#plt.show()
 
 #sumPreds.to_csv("out1.csv")
 future = train[(train["date"] >= pd.to_datetime("2018-06-17")) & (train["date"] <= pd.to_datetime("2018-06-29"))]
 future = future.groupby("itemID")["order"].sum()
 
-preds = X_train[((X_train["day"] >= 17) & (X_train["month"] == 6)) & ((X_train["day"] <= 29) & (X_train["month"] == 6))]
+preds = X_train_aux[((X_train_aux["day"] >= 17) & (X_train_aux["month"] == 6)) & ((X_train_aux["day"] <= 29) & (X_train_aux["month"] == 6))]
 preds = preds.groupby("itemID")["order"].sum()
 
 #dif = pd.DataFrame(sumPreds - future) 
