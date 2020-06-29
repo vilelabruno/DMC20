@@ -133,7 +133,7 @@ sumPreds = pd.DataFrame(np.zeros(10464))
 xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.7, colsample_bylevel=0.6, colsample_bytree=0.6,
        gamma=0.1, learning_rate=0.01, max_delta_step=0, max_depth=5,
        min_child_weight=6, n_estimators=200, nthread=7, reg_alpha=0.75, reg_lambda=0.45,
-       scale_pos_weight=1, seed=42, subsample=0.7)
+       scale_pos_weight=1, seed=42, subsample=0.8)
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
 xgb_model.fit(X_train,y_train)
@@ -204,6 +204,7 @@ for i in range(0,14):
     #plt.show()
 
 #sumPreds.to_csv("out1.csv")
+X_train["order"] = y_train
 future = train[(train["date"] > pd.to_datetime("2018-06-16")) & (train["date"] <= pd.to_datetime("2018-06-29"))]
 future = future.groupby("itemID")["order"].sum()
 
