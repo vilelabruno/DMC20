@@ -10,7 +10,7 @@ np.random.seed(seed)
 print('Reading csv...')
 train = pd.read_csv('data/trainNew.csv')
 orders = pd.read_csv("data/orders.csv")
-limiar = pd.read_csv("limiar1.csv")
+limiar = pd.read_csv("limiar.csv")
 sp = pd.read_csv("salesPrice.csv")
 del limiar["Unnamed: 0"], sp["Unnamed: 0"]
 limiar["limiarDate"] =  pd.to_datetime(limiar["time"])
@@ -72,6 +72,8 @@ train.fillna(0, inplace=True)
 #train["daysToLimiar"] = train["daysToLimiar"].astype(int)
 del train["limiarDate"]
 train["day"] = train["date"].dt.day
+train["classDay"] = train["day"]/10
+train["classDay"] = train["classDay"].astype(int)
 train["weekNumber"] = train["date"].dt.week
 train = train.merge(sp, on=["itemID", "weekNumber"], how="left")
 train["weekDay"] = train["date"].dt.weekday
@@ -99,6 +101,16 @@ X_test = X_test.merge(pd.DataFrame(X_train.groupby(["itemID"])["order"].mean()).
 X_test = X_test.merge(pd.DataFrame(X_train.groupby(["itemID"])["order"].std()).rename(columns={"order": "orderStd"}), how="left", on="itemID")
 X_test = X_test.merge(pd.DataFrame(X_train.groupby(["itemID"])["order"].min()).rename(columns={"order": "orderMin"}), how="left", on="itemID")
 X_test = X_test.merge(pd.DataFrame(X_train.groupby(["itemID"])["order"].max()).rename(columns={"order": "orderMax"}), how="left", on="itemID")
+
+X_train = X_train.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].mean()).rename(columns={"order": "classDayOrderMean"}), how="left", on="classDay")
+X_train = X_train.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].std()).rename(columns={"order": "classDayOrderStd"}), how="left", on="classDay")
+X_train = X_train.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].min()).rename(columns={"order": "classDayOrderMin"}), how="left", on="classDay")
+X_train = X_train.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].max()).rename(columns={"order": "classDayOrderMax"}), how="left", on="classDay")
+
+X_test = X_test.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].mean()).rename(columns={"order": "classDayOrderMean"}), how="left", on="classDay")
+X_test = X_test.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].std()).rename(columns={"order": "classDayOrderStd"}), how="left", on="classDay")
+X_test = X_test.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].min()).rename(columns={"order": "classDayOrderMin"}), how="left", on="classDay")
+X_test = X_test.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].max()).rename(columns={"order": "classDayOrderMax"}), how="left", on="classDay")
 
 train_day = X_train[X_train["weekDay"] == X_test["weekDay"].iloc[0]]
 y_train_day = train_day.pop('order')
@@ -135,12 +147,6 @@ xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.5, co
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
 
-X_train["salesDiffLimiar"] = X_train["salesLimiar"] - X_train["salesPrice"]
-X_train['salesDiffLimiar'] = pd.to_numeric(X_train['salesDiffLimiar'], errors='coerce')  
-X_test["salesDiffLimiar"] = X_test["salesLimiar"] - X_test["salesPrice"]
-X_test['salesDiffLimiar'] = pd.to_numeric(X_test['salesDiffLimiar'], errors='coerce')  
-X_train.fillna(0, inplace=True)
-X_test.fillna(0, inplace=True)
 for i in range(0,14):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
     #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)     #todo 
