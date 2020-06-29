@@ -81,7 +81,7 @@ train["weekDay"] = train["date"].dt.weekday
 train["month"] = train["date"].dt.month
 train.sort_values(by=["date"])
 X_test = train[train["date"] == pd.to_datetime("2018-06-17")]
-X_train = train[train["date"] < pd.to_datetime("2018-06-17")]
+X_train = train[train["date"] <= pd.to_datetime("2018-06-17")]
 #X_test = train[train["date"] >= pd.to_datetime("2018-07-01")]
 #X_train = train[train["date"] < pd.to_datetime("2018-07-01")]
 
@@ -101,16 +101,6 @@ X_test = X_test.merge(pd.DataFrame(X_train.groupby(["itemID"])["order"].mean()).
 X_test = X_test.merge(pd.DataFrame(X_train.groupby(["itemID"])["order"].std()).rename(columns={"order": "orderStd"}), how="left", on="itemID")
 X_test = X_test.merge(pd.DataFrame(X_train.groupby(["itemID"])["order"].min()).rename(columns={"order": "orderMin"}), how="left", on="itemID")
 X_test = X_test.merge(pd.DataFrame(X_train.groupby(["itemID"])["order"].max()).rename(columns={"order": "orderMax"}), how="left", on="itemID")
-
-X_train = X_train.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].mean()).rename(columns={"order": "classDayOrderMean"}), how="left", on="classDay")
-X_train = X_train.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].std()).rename(columns={"order": "classDayOrderStd"}), how="left", on="classDay")
-X_train = X_train.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].min()).rename(columns={"order": "classDayOrderMin"}), how="left", on="classDay")
-X_train = X_train.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].max()).rename(columns={"order": "classDayOrderMax"}), how="left", on="classDay")
-
-X_test = X_test.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].mean()).rename(columns={"order": "classDayOrderMean"}), how="left", on="classDay")
-X_test = X_test.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].std()).rename(columns={"order": "classDayOrderStd"}), how="left", on="classDay")
-X_test = X_test.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].min()).rename(columns={"order": "classDayOrderMin"}), how="left", on="classDay")
-X_test = X_test.merge(pd.DataFrame(X_train.groupby(["classDay"])["order"].max()).rename(columns={"order": "classDayOrderMax"}), how="left", on="classDay")
 
 train_day = X_train[X_train["weekDay"] == X_test["weekDay"].iloc[0]]
 y_train_day = train_day.pop('order')
@@ -146,12 +136,17 @@ xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.5, co
        scale_pos_weight=1, seed=42, subsample=0.6)
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
-
 for i in range(0,14):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
     #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)     #todo 
     
-    
+    X_test["day"] = X_test["day"]+1
+    X_test["daysToLimiar"] = X_test["daysToLimiar"]+1
+    if X_test["weekDay"].iloc[0] == 6:
+        X_test["weekNumber"] = X_test["weekNumber"] + 1 
+        X_test["weekDay"] = 0
+    else:
+        X_test["weekDay"] = X_test["weekDay"]+1
     xgb_model.fit(X_train,y_train)
     #gsearch1 = GridSearchCV(estimator = xgb_model, param_grid = parameters_for_testing, n_jobs=6,iid=False, verbose=10,scoring='neg_mean_squared_error')
     #gsearch1.fit(X_train,y_train)
@@ -174,7 +169,7 @@ for i in range(0,14):
 
     preds[preds < 0 ] = 0
     preds = preds.astype(int)
-    y_test = train["order"][train["date"] == pd.to_datetime("2018-06-"+str(17+i))]
+    y_test = train["order"][train["date"] == pd.to_datetime("2018-06-"+str(18+i))]
 
     y_test = np.array(y_test)
     preds = np.array(preds)
@@ -189,13 +184,7 @@ for i in range(0,14):
     
     #sumPreds = sumPreds + preds
     X_train = pd.concat([X_train, X_test])
-    X_test["day"] = X_test["day"]+1
-    X_test["daysToLimiar"] = X_test["daysToLimiar"]+1
-    if X_test["weekDay"].iloc[0] == 6:
-        X_test["weekNumber"] = X_test["weekNumber"] + 1 
-        X_test["weekDay"] = 0
-    else:
-        X_test["weekDay"] = X_test["weekDay"]+1
+
     
 
     train_day = X_train[X_train["weekDay"] == X_test["weekDay"].iloc[0]]
