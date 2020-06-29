@@ -80,8 +80,8 @@ train["weekDay"] = train["date"].dt.weekday
 
 train["month"] = train["date"].dt.month
 train.sort_values(by=["date"])
-X_test = train[train["date"] == pd.to_datetime("2018-06-17")]
-X_train = train[train["date"] <= pd.to_datetime("2018-06-17")]
+X_test = train[train["date"] == pd.to_datetime("2018-06-16")]
+X_train = train[train["date"] <= pd.to_datetime("2018-06-16")]
 #X_test = train[train["date"] >= pd.to_datetime("2018-07-01")]
 #X_train = train[train["date"] < pd.to_datetime("2018-07-01")]
 
@@ -131,11 +131,12 @@ params = {'tree_method': 'exact',
 sumPreds = pd.DataFrame(np.zeros(10464))
 #del  X_test["salesPrice"], X_test["recommendedRetailPrice"],  X_train["salesPrice"], X_train["recommendedRetailPrice"]
 xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.7, colsample_bylevel=0.6, colsample_bytree=0.6,
-       gamma=0.1, learning_rate=0.007, max_delta_step=0, max_depth=3,
+       gamma=0.1, learning_rate=0.01, max_delta_step=0, max_depth=3,
        min_child_weight=1.5, n_estimators=200, nthread=7, reg_alpha=0.75, reg_lambda=0.45,
        scale_pos_weight=1, seed=42, subsample=0.6)
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
+xgb_model.fit(X_train,y_train)
 for i in range(0,14):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
     #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)     #todo 
@@ -147,7 +148,6 @@ for i in range(0,14):
         X_test["weekDay"] = 0
     else:
         X_test["weekDay"] = X_test["weekDay"]+1
-    xgb_model.fit(X_train,y_train)
     #gsearch1 = GridSearchCV(estimator = xgb_model, param_grid = parameters_for_testing, n_jobs=6,iid=False, verbose=10,scoring='neg_mean_squared_error')
     #gsearch1.fit(X_train,y_train)
     #print (gsearch1.grid_scores_)
@@ -169,7 +169,7 @@ for i in range(0,14):
 
     preds[preds < 0 ] = 0
     preds = preds.astype(int)
-    y_test = train["order"][train["date"] == pd.to_datetime("2018-06-"+str(18+i))]
+    y_test = train["order"][train["date"] == pd.to_datetime("2018-06-"+str(17+i))]
 
     y_test = np.array(y_test)
     preds = np.array(preds)
@@ -201,10 +201,10 @@ for i in range(0,14):
     #plt.show()
 
 #sumPreds.to_csv("out1.csv")
-future = train[(train["date"] >= pd.to_datetime("2018-06-17")) & (train["date"] <= pd.to_datetime("2018-06-29"))]
+future = train[(train["date"] > pd.to_datetime("2018-06-16")) & (train["date"] <= pd.to_datetime("2018-06-29"))]
 future = future.groupby("itemID")["order"].sum()
 
-preds = X_train[((X_train["day"] >= 17) & (X_train["month"] == 6)) & ((X_train["day"] <= 29) & (X_train["month"] == 6))]
+preds = X_train[((X_train["day"] > 16) & (X_train["month"] == 6)) & ((X_train["day"] <= 29) & (X_train["month"] == 6))]
 preds = preds.groupby("itemID")["order"].sum()
 
 #dif = pd.DataFrame(sumPreds - future) 
