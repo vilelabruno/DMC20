@@ -142,7 +142,7 @@ for i in range(0,14):
     
     X_test["day"] = X_test["day"]+1
     X_test["daysToLimiar"] = X_test["daysToLimiar"]+1
-    if X_test["weekDay"].iloc[0] == 6:
+    if X_test["weekDay"].iloc[0] == 7:
         X_test["weekNumber"] = X_test["weekNumber"] + 1 
         X_test["weekDay"] = 0
     else:
