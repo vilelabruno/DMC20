@@ -139,8 +139,8 @@ xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.7, co
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
 X_train["diffPrice"] = X_train["recommendedRetailPrice"] - X_train["salesPrice"]
-train_day["diffPrice"] = train_day["recommendedRetailPrice"] - train_day["salesPrice"]
 X_test["diffPrice"] = X_test["recommendedRetailPrice"] - X_test["salesPrice"]
+xgb_model.fit(X_train,y_train)
 for i in range(0,14):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
     #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)     #todo 
@@ -155,9 +155,6 @@ for i in range(0,14):
         X_test["weekDay"] = 0
     else:
         X_test["weekDay"] = X_test["weekDay"]+1
-    
-    xgb_model.fit(train_day,y_train_day)
-
     #gsearch1 = GridSearchCV(estimator = xgb_model, param_grid = parameters_for_testing, n_jobs=6,iid=False, verbose=10,scoring='neg_mean_squared_error')
     #gsearch1.fit(X_train,y_train)
     #print (gsearch1.grid_scores_)
@@ -197,11 +194,7 @@ for i in range(0,14):
 
     
 
-    if X_test["weekDay"].iloc[0] == 7:
-        train_day = X_train[X_train["weekDay"] == 0]
-    else:
-        train_day = X_train[X_train["weekDay"] == X_test["weekDay"].iloc[0]]
-    
+    train_day = X_train[X_train["weekDay"] == X_test["weekDay"].iloc[0]]
     y_train_day = train_day.pop('order')
     y_train = X_train.pop('order')
     y_test = X_test.pop('order')
@@ -225,7 +218,7 @@ preds = preds.groupby("itemID")["order"].sum()
 #dif = pd.DataFrame(sumPreds - future) 
 preds = np.array(preds)
 preds[preds < 0 ] = 0
-#preds[preds > 5 ] = preds[preds > 5 ] * 4
+preds[preds > 5 ] = preds[preds > 5 ] * 4
 future = np.array(future)
 score = preds * w
 score[(future - preds) < 0] = (future[(future - preds) < 0] - preds[(future - preds) < 0]) * (0.6 * w[(future - preds) < 0])
