@@ -8,7 +8,7 @@ seed = 1234
 np.random.seed(seed)
 
 print('Reading csv...')
-train = pd.read_csv('data/trainNewAux.csv')
+train = pd.read_csv('data/trainNew.csv')
 orders = pd.read_csv("data/orders.csv")
 limiar = pd.read_csv("limiar.csv")
 sp = pd.read_csv("salesPrice.csv")
@@ -36,6 +36,8 @@ train["customerRatingCat"] = train["customerRating"].astype(int)
 train["customerRatingNA"] = 0
 train["customerRatingNA"][train["customerRating"] == 0] = 1
 train = pd.get_dummies(train, columns=["customerRatingCat"]) 
+train = pd.get_dummies(train, columns=["category1"]) 
+train = pd.get_dummies(train, columns=["category3"]) 
 
 
 ##plt.plot(train["diffSimRec"])
