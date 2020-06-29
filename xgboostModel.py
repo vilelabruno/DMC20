@@ -10,10 +10,9 @@ np.random.seed(seed)
 print('Reading csv...')
 train = pd.read_csv('data/trainNew.csv')
 orders = pd.read_csv("data/orders.csv")
-limiar = pd.read_csv("limiar.csv")
-limiar2 = pd.read_csv("limiar2.csv")
+limiar = pd.read_csv("limiar1.csv")
 sp = pd.read_csv("salesPrice.csv")
-del limiar["Unnamed: 0"], limiar2["Unnamed: 0"], sp["Unnamed: 0"]
+del limiar["Unnamed: 0"], sp["Unnamed: 0"]
 limiar["limiarDate"] =  pd.to_datetime(limiar["time"])
 del limiar["time"]
 train = train[train["itemID"] != 10464]
@@ -23,7 +22,6 @@ train = train[train["itemID"] != 10464]
 #train["order"][train["order"] == 0] = 0 + 1e-6
 #train["priceXCR"] = train["customerRating"] * train["simulationPrice"]
 train = train.merge(limiar, on="itemID", how="left")
-train = train.merge(limiar2, on="itemID", how="left")
 del train["salesPrice"]
 train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].mean()).rename(columns={"salesPrice": "salesPriceMean"}) , how="left", on="itemID")
 train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].std()).rename(columns={"salesPrice": "salesPriceStd"}) , how="left", on="itemID")
@@ -137,10 +135,10 @@ xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.5, co
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
 
-X_train["salesDiffLimiar2"] = X_train["salesLimiar2"] - X_train["salesPrice"]
-X_train['salesDiffLimiar2'] = pd.to_numeric(X_train['salesDiffLimiar2'], errors='coerce')  
-X_test["salesDiffLimiar2"] = X_test["salesLimiar2"] - X_test["salesPrice"]
-X_test['salesDiffLimiar2'] = pd.to_numeric(X_test['salesDiffLimiar2'], errors='coerce')  
+X_train["salesDiffLimiar"] = X_train["salesLimiar"] - X_train["salesPrice"]
+X_train['salesDiffLimiar'] = pd.to_numeric(X_train['salesDiffLimiar'], errors='coerce')  
+X_test["salesDiffLimiar"] = X_test["salesLimiar"] - X_test["salesPrice"]
+X_test['salesDiffLimiar'] = pd.to_numeric(X_test['salesDiffLimiar'], errors='coerce')  
 X_train.fillna(0, inplace=True)
 X_test.fillna(0, inplace=True)
 for i in range(0,14):    

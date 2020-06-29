@@ -1,6 +1,6 @@
 import pandas as pd
 df = pd.read_csv("data/orders.csv")
-i = 2
+i = 1
 if i == 1:
     df.reset_index(inplace=True)
     dfAux = df.groupby("itemID")["index"].max()
@@ -15,6 +15,6 @@ else:
     dfAux = dfAux.merge(df, how="left", on="index")
 
 dfAux["itemID"] = dfAux["itemID_x"]
-del dfAux["itemID_x"], dfAux["index"], dfAux["itemID_y"], dfAux["transactID"], dfAux["order"],  dfAux["time"]
-dfAux = dfAux.rename(columns={"salesPrice": "salesLimiar"+str(i)})
+del dfAux["itemID_x"], dfAux["index"], dfAux["itemID_y"], dfAux["transactID"], dfAux["order"]
+dfAux = dfAux.rename(columns={"salesPrice": "salesLimiar"})
 dfAux.to_csv("limiar"+str(i)+".csv")
