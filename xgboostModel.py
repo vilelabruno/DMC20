@@ -133,7 +133,7 @@ sumPreds = pd.DataFrame(np.zeros(10464))
 xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.7, colsample_bylevel=0.6, colsample_bytree=0.6,
        gamma=0.1, learning_rate=0.01, max_delta_step=0, max_depth=5,
        min_child_weight=15, n_estimators=300, nthread=7, reg_alpha=0.75, reg_lambda=0.45,
-       scale_pos_weight=1, seed=42, subsample=0.7)
+       scale_pos_weight=0.9, seed=42, subsample=0.7)
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
 xgb_model.fit(X_train,y_train)
