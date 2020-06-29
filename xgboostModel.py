@@ -35,9 +35,9 @@ train["brandManu"] = train["brand"] * train["manufacturer"]
 train["customerRatingCat"] = train["customerRating"].astype(int)
 train["customerRatingNA"] = 0
 train["customerRatingNA"][train["customerRating"] == 0] = 1
-train = pd.get_dummies(train, columns=["customerRatingCat"]) 
-train = pd.get_dummies(train, columns=["category1"]) 
-train = pd.get_dummies(train, columns=["category3"]) 
+#train = pd.get_dummies(train, columns=["customerRatingCat"]) 
+#train = pd.get_dummies(train, columns=["category1"]) 
+#train = pd.get_dummies(train, columns=["category3"]) 
 
 
 ##plt.plot(train["diffSimRec"])
