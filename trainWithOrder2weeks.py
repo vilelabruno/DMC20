@@ -3,7 +3,8 @@ from datetime import timedelta
 import matplotlib.pyplot as plt
 #items = pd.read_csv("data/items.csv")
 infos = pd.read_csv("data/infos.csv", sep="|")
-orders = pd.read_csv("data/orders.csv", sep="|")
+orders = pd.read_csv("data/orders.csv", sep=",")
+items = pd.read_csv("data/items.csv", sep="|")
 
 orders["time"] = pd.to_datetime(orders["time"])
 orders["weekNumber"] = -1
@@ -11,6 +12,7 @@ orders["weekPromotion"] = 0
 aux = infos.promotion.str.split(",", expand=True).reset_index() 
 aux["index"] = aux.index + 1  
 orders = orders.merge(aux, how="left", left_on="itemID", right_on="index")
+orders = orders.merge(items, how="left", left_on="itemID", right_on="itemID")
 
 orders[0] = pd.to_datetime(orders[0])
 orders[1] = pd.to_datetime(orders[1])
@@ -21,7 +23,7 @@ for i in range(0,13):
     orders["weekPromotion"][((orders[1] > (pd.to_datetime("2018-01-01") + timedelta(days=(14*i)))) & (orders[1] < (pd.to_datetime("2018-01-01") + timedelta(days=(14*(i+1)))))) & (orders["weekNumber"] == i)] = 1
     orders["weekPromotion"][((orders[2] > (pd.to_datetime("2018-01-01") + timedelta(days=(14*i)))) & (orders[2] < (pd.to_datetime("2018-01-01") + timedelta(days=(14*(i+1)))))) & (orders["weekNumber"] == i)] = 1
 
-gp = orders.groupby(["itemID", "weekNumber"]).agg({"order": "sum", "weekPromotion": "sum"})
+gp = orders.groupby(["itemID", "weekNumber"]).agg({"order": "sum", "weekPromotion": "sum", "brand":"min", "manufacturer":"min", "customerRating":"max", "category1":"max", "category2":"max", "category3":"max", "recommendedRetailPrice":"max"})
 gp["weekPromotion"] =  gp["weekPromotion"]/gp["weekPromotion"]
 gp.fillna(0, inplace=True)
 #gp = orders.groupby(["weekNumber"]).agg({"order": sum})#this lines contains the plot for orders                                                  
@@ -30,4 +32,4 @@ gp.fillna(0, inplace=True)
 #plt.plot(gp["weekNumber"], gp["order"], '--')          #this lines contains the plot for orders                                      
 #plt.show()                                             #this lines contains the plot for orders  
 gp.reset_index(inplace=True)
-gp.to_csv("data/train2weeksWithOrder.csv", index=False)
+gp.to_csv("data/train2weeks.csv", index=False)

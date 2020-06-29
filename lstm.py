@@ -104,7 +104,7 @@ y_test = x_test.pop('order')
 w_test = x_test.pop('simulationPrice')
 
 print("Instantiating Model..."+'\n')
-hidden_nodes = len(x_train.columns) * 2
+hidden_nodes = 100
 output_labels = 1
 model_lstm = Sequential()
 model_lstm.add(LSTM(hidden_nodes, return_sequences=True, input_shape=(1,len(x_train.columns))))
@@ -114,7 +114,7 @@ model_lstm.add(Dropout(0.2))
 model_lstm.add(Dense(units=output_labels))
 model_lstm.add(Activation('linear'))
 opt = Adam(learning_rate=0.001)
-model_lstm.compile(loss='mean_absolute_error', optimizer=opt, metrics=['mse'])
+model_lstm.compile(loss='mean_squared_error', optimizer=opt, metrics=['accuracy'])
 # Reshape the data between -1 and 1 and to 3D
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
 scaler = StandardScaler()
@@ -122,13 +122,10 @@ scaler = MinMaxScaler(feature_range=(-1, 1))
 
 preds = pd.DataFrame()
 score = preds.copy()
-y = pd.DataFrame()
-w = pd.DataFrame()
 
 print("TRAINING START"+'\n')
 days = 14
-n_epochs = 1
-b_size = 2048
+n_epochs = 5
 for i in range(0, days):
     print("---- DAY "+str(i)+" ----")
     x_train_scaled = scaler.fit_transform(x_train)
@@ -142,7 +139,7 @@ for i in range(0, days):
     w_train_reshaped = w_train.values.reshape(-1, 1)
     w_val_reshaped = w_test.values.reshape(-1, 1)
 
-    model_lstm.fit(x_train_reshaped, y_train_reshaped, validation_data=(x_val_reshaped, y_val_reshaped),epochs=n_epochs, batch_size=b_size, verbose=2, shuffle=False)
+    model_lstm.fit(x_train_reshaped, y_train_reshaped, validation_data=(x_val_reshaped, y_val_reshaped),epochs=n_epochs, batch_size=2048, verbose=2, shuffle=False)
     #DE = shap.DeepExplainer(model_lstm, x_train_reshaped) # X_train is 3d numpy.ndarray
     #shap_values = DE.shap_values(x_val_reshaped, check_additivity=False) # X_validate is 3d numpy.ndarray
 
@@ -155,6 +152,7 @@ for i in range(0, days):
     #    plot_type='bar')
 
     y_pre = model_lstm.predict(x_val_reshaped)
+    print(np.concatenate(y_pre, axis=0))
     #y_pre = pd.DataFrame(y_pre)
     preds[i] = np.concatenate(y_pre, axis=0)
 
@@ -185,23 +183,19 @@ for i in range(0, days):
     y_train = x_train.pop('order')
     y_test = x_test.pop('order')
     print("---------------"+'\n')
-print("END OF TRAINING"+'\n')
+print("END OF TRAINING")
+print(preds.describe())
+print(Y_TEST.describe())
+print("\n")
 
 '''Final Score'''
-#score = w_test * preds
-for i in range(0, days):
-    score[i][(Y_TEST[i] - preds[i]) < 0] = 0.6 * w_test[(Y_TEST[i] - preds[i]) < 0] * (Y_TEST[i][(Y_TEST[i] - preds[i]) < 0] - preds[i][(Y_TEST[i] - preds[i]) < 0])
-print(Y_TEST.describe())
-print(preds.describe())
-print('\n')
 print('Final Score: '+str(score.values.sum()))
-#print(score.describe())
-#print((y - preds).describe())
 
 '''Exact Predictions'''
-equals = preds[preds.astype(int) == Y_TEST.astype(int)]
+equals = preds[preds.astype(int) == Y_TEST[i].astype(int)]
 equals = equals.dropna()
 print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
+print(score.describe())
 
 print("Saving Results..."+'\n')
 #preds.to_csv("out/lstm.csv")
