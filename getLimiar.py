@@ -15,6 +15,6 @@ else:
     dfAux = dfAux.merge(df, how="left", on="index")
 
 dfAux["itemID"] = dfAux["itemID_x"]
-del dfAux["itemID_x"], dfAux["index"], dfAux["itemID_y"], dfAux["transactID"], dfAux["order"],  dfAux["salesPrice"]
-#dfAux.rename(columns={"salesPrice": "salesLimiar"+str(i)})
+del dfAux["itemID_x"], dfAux["index"], dfAux["itemID_y"], dfAux["transactID"], dfAux["order"],  dfAux["time"]
+dfAux = dfAux.rename(columns={"salesPrice": "salesLimiar"+str(i)})
 dfAux.to_csv("limiar"+str(i)+".csv")
