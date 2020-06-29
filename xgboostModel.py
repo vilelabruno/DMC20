@@ -11,10 +11,12 @@ print('Reading csv...')
 train = pd.read_csv('data/trainNew.csv')
 orders = pd.read_csv("data/orders.csv")
 limiar = pd.read_csv("limiar.csv")
+limiar2 = pd.read_csv("limiar2.csv")
 sp = pd.read_csv("salesPrice.csv")
-del limiar["Unnamed: 0"], sp["Unnamed: 0"]
+del limiar["Unnamed: 0"], limiar2["Unnamed: 0"], sp["Unnamed: 0"]
 limiar["limiarDate"] =  pd.to_datetime(limiar["time"])
-del limiar["time"]
+limiar2["limiarDate2"] =  pd.to_datetime(limiar2["time"])
+del limiar["time"], limiar2["time"]
 train = train[train["itemID"] != 10464]
 #test = pd.read_csv('data/test.csv', sep='|')
 
@@ -22,6 +24,7 @@ train = train[train["itemID"] != 10464]
 #train["order"][train["order"] == 0] = 0 + 1e-6
 #train["priceXCR"] = train["customerRating"] * train["simulationPrice"]
 train = train.merge(limiar, on="itemID", how="left")
+train = train.merge(limiar2, on="itemID", how="left")
 del train["salesPrice"]
 train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].mean()).rename(columns={"salesPrice": "salesPriceMean"}) , how="left", on="itemID")
 train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].std()).rename(columns={"salesPrice": "salesPriceStd"}) , how="left", on="itemID")
@@ -35,7 +38,7 @@ train["brandManu"] = train["brand"] * train["manufacturer"]
 train["customerRatingCat"] = train["customerRating"].astype(int)
 train["customerRatingNA"] = 0
 train["customerRatingNA"][train["customerRating"] == 0] = 1
-#train = pd.get_dummies(train, columns=["customerRatingCat"]) 
+train = pd.get_dummies(train, columns=["customerRatingCat"]) 
 #train = pd.get_dummies(train, columns=["category1"]) 
 #train = pd.get_dummies(train, columns=["category3"]) 
 
@@ -67,9 +70,12 @@ train["date"] = pd.to_datetime(train["date"])
 
 train["daysToLimiar"] = train["limiarDate"] - train["date"]
 train['daysToLimiar'] = pd.to_numeric(train['daysToLimiar'], errors='coerce')  
+
+train["daysToLimiar2"] = train["limiarDate2"] - train["date"]
+train['daysToLimiar2'] = pd.to_numeric(train['daysToLimiar2'], errors='coerce')  
 train.fillna(0, inplace=True)  
 #train["daysToLimiar"] = train["daysToLimiar"].astype(int)
-del train["limiarDate"]
+del train["limiarDate"], train["limiarDate2"] 
 train["day"] = train["date"].dt.day
 train["weekNumber"] = train["date"].dt.week
 train = train.merge(sp, on=["itemID", "weekNumber"], how="left")
@@ -133,7 +139,6 @@ xgb_model = xgb.XGBRegressor(objective="reg:squaredlogerror", base_score=0.5, co
        scale_pos_weight=1, seed=42, subsample=0.6)
 w = pd.DataFrame(w)
 w = np.array(w["recommendedRetailPrice"])
-
 for i in range(0,14):    
     #dtrain = xgb.DMatrix(X_train, label=y_train, weight=w_train)
     #dvalid = xgb.DMatrix(X_test, label=y_test, weight=w_test)     #todo 
