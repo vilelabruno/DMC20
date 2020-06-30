@@ -125,7 +125,7 @@ score = preds.copy()
 
 print("TRAINING START"+'\n')
 days = 14
-n_epochs = 5
+n_epochs = 1
 for i in range(0, days):
     print("---- DAY "+str(i)+" ----")
     x_train_scaled = scaler.fit_transform(x_train)
@@ -192,6 +192,18 @@ print("\n")
 print('Final Score: '+str(score.values.sum()))
 
 '''Exact Predictions'''
+equals = preds[preds.astype(int) == Y_TEST[i].astype(int)]
+equals = equals.dropna()
+print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
+print(score.describe())
+
+print("Score with multiplier:"+'\n')
+preds = preds * 1.5
+for i in range(0, 14): 
+    score[i] = w_test * preds[i] 
+    score[i][(Y_TEST[i] - preds[i]) < 0] = 0.6 * w_test[(Y_TEST[i] - preds[i]) < 0] * (Y_TEST[i][(Y_TEST[i] - preds[i]) < 0] - preds[i][(Y_TEST[i] - preds[i]) < 0]) 
+    print('Day '+str(i)+' Score: '+str(score[i].sum()))
+print('\n'+'Final Score: '+str(score.values.sum()))
 equals = preds[preds.astype(int) == Y_TEST[i].astype(int)]
 equals = equals.dropna()
 print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
