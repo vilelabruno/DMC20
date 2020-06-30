@@ -141,7 +141,7 @@ print(xgb['0'].corr(lstm['0']))
 print('\n')
 
 #result = ((lstm["0"] + xgb["0"]) / len(xgb))
-result = ((lstm["0"] + xgb["0"]) / len(xgb)) * 80
+result = ((lstm["0"] + xgb["0"]) / len(xgb)) * 100
 #result = ((lstm["0"] + xgb["0"]) / 2)
 #result = (lstm["0"] + xgb["0"]) * xgb["0"]
 #result = lstm["0"] + xgb["0"]
@@ -165,7 +165,7 @@ equals = equals.dropna()
 print('| Exact Predictions: '+str(len(equals))+' of '+str(len(result)))
 print("+-------------------"+'\n')
 
-print('\n'+"+----- XGBOOST DAY2DAY ----")
+print('\n'+"+----- XGBOOST ----")
 scoreX = pd.DataFrame()
 scoreX = w * xgb['0']
 scoreX[(Y_TEST["sum"] - xgb['0']) < 0] = 0.6 * w[(Y_TEST["sum"] - xgb['0']) < 0] * (Y_TEST["sum"][(Y_TEST["sum"] - xgb['0']) < 0] - xgb['0'][(Y_TEST["sum"] - xgb['0']) < 0]) 
@@ -173,7 +173,7 @@ print('| Final Score: '+str(scoreX.sum()))
 equals = xgb['0'][xgb['0'].astype(int) == Y_TEST["sum"].astype(int)]
 equals = equals.dropna()
 print('| Exact Predictions: '+str(len(equals))+' of '+str(len(xgb['0'])))
-print("+--------------------------"+'\n')
+print("+------------------"+'\n')
 
 print("Which one is the best?"+'\n')
 if (scoreX.sum() > score.sum()):
