@@ -202,7 +202,7 @@ print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
 print(score.describe())
 
 print("Score with multiplier:"+'\n')
-preds = preds * 1.3
+preds = preds * 0.5
 
 print(preds)
 print(Y_TEST)
