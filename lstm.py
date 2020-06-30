@@ -202,7 +202,9 @@ print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
 print(score.describe())
 
 print("Score with multiplier:"+'\n')
-preds = preds * 0.5
+preds = (preds * 0.5).astype(int)
+#Y_TEST.std().mean() == 26.88784712221067
+#preds = (preds * 27).astype(int)
 
 print(preds)
 print(Y_TEST)
@@ -222,7 +224,7 @@ print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
 print(score.describe())
 
 print("Saving Results..."+'\n')
-#preds.to_csv("out/lstm.csv")
+preds.to_csv("out/lstm.csv")
 
 print("   - THE END -   "+'\n')
 
