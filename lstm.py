@@ -37,7 +37,7 @@ seed = 1234
 np.random.seed(seed)
 
 print("Importing Data..."+'\n')
-train = pd.read_csv("data/trainAllDays.csv")
+train = pd.read_csv("data/trainNew.csv")
 train = train[train["itemID"] != 10464]
 train["date"] = pd.to_datetime(train["date"])
 train.sort_values(by=["date"])
@@ -63,29 +63,28 @@ train["weekDay"] = train["date"].dt.weekday
 train["month"] = train["date"].dt.month
 train.sort_values(by=["date"])
 
-x_test = train[train["date"] == pd.to_datetime("2018-06-01")]
-x_train = train[train["date"] < pd.to_datetime("2018-06-01")]
-X_TEST = train[train["date"] >= pd.to_datetime("2018-06-01")]
-X_TEST = X_TEST[train["date"] < pd.to_datetime("2018-06-15")]
+x_test = train[train["date"] == pd.to_datetime("2018-06-17")]
+x_train = train[train["date"] < pd.to_datetime("2018-06-17")]
+
+X_TEST = train[train["date"] >= pd.to_datetime("2018-06-17")]
 Y_TEST = pd.DataFrame()
 Y_TEST['order'] = X_TEST.pop('order')
 Y_TEST['date'] = X_TEST['date']
 Y_TEST['itemID'] = X_TEST['itemID']
 TARGETS = pd.DataFrame()
-TARGETS[0] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-01")].reset_index().drop('index', axis=1)['order']
-TARGETS[1] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-02")].reset_index().drop('index', axis=1)['order']
-TARGETS[2] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-03")].reset_index().drop('index', axis=1)['order']
-TARGETS[3] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-04")].reset_index().drop('index', axis=1)['order']
-TARGETS[4] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-05")].reset_index().drop('index', axis=1)['order']
-TARGETS[5] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-06")].reset_index().drop('index', axis=1)['order']
-TARGETS[6] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-07")].reset_index().drop('index', axis=1)['order']
-TARGETS[7] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-08")].reset_index().drop('index', axis=1)['order']
-TARGETS[8] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-09")].reset_index().drop('index', axis=1)['order']
-TARGETS[9] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-10")].reset_index().drop('index', axis=1)['order']
-TARGETS[10] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-11")].reset_index().drop('index', axis=1)['order']
-TARGETS[11] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-12")].reset_index().drop('index', axis=1)['order']
-TARGETS[12] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-13")].reset_index().drop('index', axis=1)['order']
-TARGETS[13] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-14")].reset_index().drop('index', axis=1)['order']
+TARGETS[0] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-17")].reset_index().drop('index', axis=1)['order']
+TARGETS[1] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-18")].reset_index().drop('index', axis=1)['order']
+TARGETS[2] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-19")].reset_index().drop('index', axis=1)['order']
+TARGETS[3] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-20")].reset_index().drop('index', axis=1)['order']
+TARGETS[4] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-21")].reset_index().drop('index', axis=1)['order']
+TARGETS[5] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-22")].reset_index().drop('index', axis=1)['order']
+TARGETS[6] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-23")].reset_index().drop('index', axis=1)['order']
+TARGETS[7] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-24")].reset_index().drop('index', axis=1)['order']
+TARGETS[8] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-25")].reset_index().drop('index', axis=1)['order']
+TARGETS[9] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-26")].reset_index().drop('index', axis=1)['order']
+TARGETS[10] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-27")].reset_index().drop('index', axis=1)['order']
+TARGETS[11] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-28")].reset_index().drop('index', axis=1)['order']
+TARGETS[12] = Y_TEST[Y_TEST['date'] == pd.to_datetime("2018-06-29")].reset_index().drop('index', axis=1)['order']
 del Y_TEST
 Y_TEST = TARGETS
 del TARGETS
@@ -124,7 +123,7 @@ preds = pd.DataFrame()
 score = preds.copy()
 
 print("TRAINING START"+'\n')
-days = 14
+days = 13
 n_epochs = 1
 for i in range(0, days):
     print("---- DAY "+str(i)+" ----")
@@ -212,7 +211,7 @@ print(preds.describe())
 print(Y_TEST.describe())
 print("\n")
 
-for i in range(0, 14): 
+for i in range(0, days): 
     score[i] = w_test * preds[i] 
     score[i][(Y_TEST[i] - preds[i]) < 0] = 0.6 * w_test[(Y_TEST[i] - preds[i]) < 0] * (Y_TEST[i][(Y_TEST[i] - preds[i]) < 0] - preds[i][(Y_TEST[i] - preds[i]) < 0]) 
     print('Day '+str(i)+' Score: '+str(score[i].sum()))
