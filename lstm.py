@@ -134,7 +134,7 @@ for i in range(0, days):
         x_test["weekDay"] = 0
     else:
         x_test["weekDay"] = x_test["weekDay"]+1
-        
+
     x_train_scaled = scaler.fit_transform(x_train)
     x_valid_scaled = scaler.fit_transform(x_test)
     x_train_reshaped = x_train_scaled.reshape((x_train_scaled.shape[0], 1, x_train_scaled.shape[1]))
@@ -186,6 +186,8 @@ for i in range(0, days):
     y_test = x_test.pop('order')
     print("---------------"+'\n')
 print("END OF TRAINING")
+print(preds)
+print(Y_TEST)
 print(preds.describe())
 print(Y_TEST.describe())
 print("\n")
@@ -200,11 +202,19 @@ print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
 print(score.describe())
 
 print("Score with multiplier:"+'\n')
-preds = preds * 0.5
+preds = preds * 1.2
+
+print(preds)
+print(Y_TEST)
+print(preds.describe())
+print(Y_TEST.describe())
+print("\n")
+
 for i in range(0, 14): 
     score[i] = w_test * preds[i] 
     score[i][(Y_TEST[i] - preds[i]) < 0] = 0.6 * w_test[(Y_TEST[i] - preds[i]) < 0] * (Y_TEST[i][(Y_TEST[i] - preds[i]) < 0] - preds[i][(Y_TEST[i] - preds[i]) < 0]) 
     print('Day '+str(i)+' Score: '+str(score[i].sum()))
+
 print('\n'+'Final Score: '+str(score.values.sum()))
 equals = preds[preds.astype(int) == Y_TEST[i].astype(int)]
 equals = equals.dropna()
