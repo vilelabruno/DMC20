@@ -140,7 +140,8 @@ print("Correlation:")
 print(xgb['0'].corr(lstm['0']))
 print('\n')
 
-result = ((lstm["0"] + xgb["0"]) / len(xgb))
+#result = ((lstm["0"] + xgb["0"]) / len(xgb))
+result = ((lstm["0"] + xgb["0"]) / len(xgb)) * 10
 #result = ((lstm["0"] + xgb["0"]) / 2)
 #result = (lstm["0"] + xgb["0"]) * xgb["0"]
 #result = lstm["0"] + xgb["0"]
