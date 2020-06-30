@@ -38,33 +38,73 @@ np.random.seed(seed)
 
 print("Importing Data..."+'\n')
 train = pd.read_csv("data/trainNew.csv")
+orders = pd.read_csv("data/orders.csv")
+limiar = pd.read_csv("limiar.csv")
+sp = pd.read_csv("salesPrice.csv")
+del limiar["Unnamed: 0"], sp["Unnamed: 0"]
+limiar["limiarDate"] =  pd.to_datetime(limiar["time"])
+del limiar["time"]
 train = train[train["itemID"] != 10464]
-train["date"] = pd.to_datetime(train["date"])
-train.sort_values(by=["date"])
-train["weekDay"] = train["date"].dt.day_name()   
-#train = pd.get_dummies(train, columns=["weekDay"])
 
-print("Feature Engineering..."+'\n')
-train['category1_2'] = train['category1'] * train['category2']
-train['category1_3'] = train['category1'] * train['category3']
-train['category2_3'] = train['category2'] * train['category3']
-train['category1_2_3'] = train['category1'] * train['category2'] * train['category3']
+train = train.merge(limiar, on="itemID", how="left")
+del train["salesPrice"]
+train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].mean()).rename(columns={"salesPrice": "salesPriceMean"}) , how="left", on="itemID")
+train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].std()).rename(columns={"salesPrice": "salesPriceStd"}) , how="left", on="itemID")
+train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].min()).rename(columns={"salesPrice": "salesPriceMin"}) , how="left", on="itemID")
+train = train.merge(pd.DataFrame(orders.groupby("itemID")["salesPrice"].max()).rename(columns={"salesPrice": "salesPriceMax"}) , how="left", on="itemID")
 
-#train["order"][train["order"] == 0] = 0 + 1e-6
-train["diffSimRec"] = train["recommendedRetailPrice"] - train["simulationPrice"]
+train["brandNA"] = 0
+train["brandNA"][train["brand"] == 0] = 1
+train["brandManu"] = train["brand"] * train["manufacturer"]
 
+train["customerRatingCat"] = train["customerRating"].astype(int)
+train["customerRatingNA"] = 0
+train["customerRatingNA"][train["customerRating"] == 0] = 1
+train = pd.get_dummies(train, columns=["customerRatingCat"])
+'''Deleting promotion column'''
 del train["promotion"]
+#'''Promotion times Price'''
+orders["time"] = pd.to_datetime(orders["time"])
+orders["date"] = orders["time"].dt.date
+train = train.merge(pd.DataFrame(orders.groupby(["itemID"])["transactID"].count()).rename(columns={"transactID": "transactIDcount"}) , how="left", on="itemID")
+train = train.merge(pd.DataFrame(orders.groupby(["itemID"])["transactID"].mean()).rename(columns={"transactID": "transactIDmean"}) , how="left", on="itemID")
+train = train.merge(pd.DataFrame(orders.groupby(["itemID"])["transactID"].min()).rename(columns={"transactID": "transactIDmin"}) , how="left", on="itemID")
+train = train.merge(pd.DataFrame(orders.groupby(["itemID"])["transactID"].max()).rename(columns={"transactID": "transactIDmax"}) , how="left", on="itemID")
+train = train.merge(pd.DataFrame(orders.groupby(["itemID"])["transactID"].std()).rename(columns={"transactID": "transactIDstd"}) , how="left", on="itemID")
 
 train["date"] = pd.to_datetime(train["date"])
+train["daysToLimiar"] = train["limiarDate"] - train["date"]
+train['daysToLimiar'] = pd.to_numeric(train['daysToLimiar'], errors='coerce')  
+
+train.fillna(0, inplace=True)  
+#train["daysToLimiar"] = train["daysToLimiar"].astype(int)
+del train["limiarDate"]
 train["day"] = train["date"].dt.day
+train["classDay"] = train["day"]/6
+train["classDay"] = train["classDay"].astype(int)
+train = pd.get_dummies(train, columns=["classDay"])
 train["weekNumber"] = train["date"].dt.week
+train = train.merge(sp, on=["itemID", "weekNumber"], how="left")
 train["weekDay"] = train["date"].dt.weekday
 
 train["month"] = train["date"].dt.month
 train.sort_values(by=["date"])
+#train = pd.get_dummies(train, columns=["weekDay"])
 
-x_test = train[train["date"] == pd.to_datetime("2018-06-17")]
-x_train = train[train["date"] < pd.to_datetime("2018-06-17")]
+#print("Feature Engineering..."+'\n')
+#train['category1_2'] = train['category1'] * train['category2']
+#train['category1_3'] = train['category1'] * train['category3']
+#train['category2_3'] = train['category2'] * train['category3']
+#train['category1_2_3'] = train['category1'] * train['category2'] * train['category3']
+
+#train["order"][train["order"] == 0] = 0 + 1e-6
+#train["diffSimRec"] = train["recommendedRetailPrice"] - train["simulationPrice"]
+
+#del train["promotion"]
+
+x_test = train[train["date"] == pd.to_datetime("2018-06-16")]
+x_train = train[train["date"] <= pd.to_datetime("2018-06-16")]
+w = x_test["recommendedRetailPrice"].fillna(1)
 
 X_TEST = train[train["date"] >= pd.to_datetime("2018-06-17")]
 Y_TEST = pd.DataFrame()
@@ -97,10 +137,25 @@ del x_train["date"], x_test["date"], x_train['salesPrice'], x_test['salesPrice']
 #x_test = x_test.fillna(0)
 
 '''Popping order and simulationPrice columns'''
-y_train = x_train.pop('order')
+
+x_train = x_train.merge(pd.DataFrame(x_train.groupby(["itemID"])["order"].mean()).rename(columns={"order": "orderMean"}), how="left", on="itemID")
+x_train = x_train.merge(pd.DataFrame(x_train.groupby(["itemID"])["order"].std()).rename(columns={"order": "orderStd"}), how="left", on="itemID")
+x_train = x_train.merge(pd.DataFrame(x_train.groupby(["itemID"])["order"].min()).rename(columns={"order": "orderMin"}), how="left", on="itemID")
+x_train = x_train.merge(pd.DataFrame(x_train.groupby(["itemID"])["order"].max()).rename(columns={"order": "orderMax"}), how="left", on="itemID")
+
+x_test = x_test.merge(pd.DataFrame(x_train.groupby(["itemID"])["order"].mean()).rename(columns={"order": "orderMean"}), how="left", on="itemID")
+x_test = x_test.merge(pd.DataFrame(x_train.groupby(["itemID"])["order"].std()).rename(columns={"order": "orderStd"}), how="left", on="itemID")
+x_test = x_test.merge(pd.DataFrame(x_train.groupby(["itemID"])["order"].min()).rename(columns={"order": "orderMin"}), how="left", on="itemID")
+x_test = x_test.merge(pd.DataFrame(x_train.groupby(["itemID"])["order"].max()).rename(columns={"order": "orderMax"}), how="left", on="itemID")
+
+train_day = x_train[x_train["weekDay"] == x_test["weekDay"].iloc[0]]
+y_train_day = train_day.pop('order')
 w_train = x_train.pop('simulationPrice')
+w_train_day = train_day.pop('simulationPrice')
+w_test = x_test.pop('simulationPrice') # qdo for prever colocar salesPrice= simulationPrice
+#x_test["salesPrice"] = w_test
+y_train = x_train.pop('order')
 y_test = x_test.pop('order')
-w_test = x_test.pop('simulationPrice')
 
 print("Instantiating Model..."+'\n')
 hidden_nodes = 100
@@ -125,10 +180,16 @@ score = preds.copy()
 print("TRAINING START"+'\n')
 days = 13
 n_epochs = 1
+b_size = 2048
 for i in range(0, days):
     print("---- DAY "+str(i)+" ----")
-    x_test["day"] = x_test["day"]+1
-    if x_test["weekDay"].iloc[0] == 6:
+    if x_test["day"].iloc[0] == 30:
+        x_test["day"] = 1
+        x_test["month"] = x_test["month"]+1 
+    else:
+        x_test["day"] = x_test["day"]+1
+    x_test["daysToLimiar"] = x_test["daysToLimiar"]+1
+    if x_test["weekDay"].iloc[0] == 7:
         x_test["weekNumber"] = x_test["weekNumber"] + 1 
         x_test["weekDay"] = 0
     else:
@@ -145,9 +206,9 @@ for i in range(0, days):
     w_train_reshaped = w_train.values.reshape(-1, 1)
     w_val_reshaped = w_test.values.reshape(-1, 1)
 
-    model_lstm.fit(x_train_reshaped, y_train_reshaped, validation_data=(x_val_reshaped, y_val_reshaped),epochs=n_epochs, batch_size=2048, verbose=2, shuffle=False)
-    #DE = shap.DeepExplainer(model_lstm, x_train_reshaped) # X_train is 3d numpy.ndarray
-    #shap_values = DE.shap_values(x_val_reshaped, check_additivity=False) # X_validate is 3d numpy.ndarray
+    model_lstm.fit(x_train_reshaped, y_train_reshaped, validation_data=(x_val_reshaped, y_val_reshaped),epochs=n_epochs, batch_size=b_size, verbose=2, shuffle=False)
+    #DE = shap.DeepExplainer(model_lstm, x_train_reshaped) # x_train is 3d numpy.ndarray
+    #shap_values = DE.shap_values(x_val_reshaped, check_additivity=False) # x_validate is 3d numpy.ndarray
 
     #shap.initjs()
     #shap.summary_plot(
@@ -178,9 +239,17 @@ for i in range(0, days):
     x_test["order"] = np.concatenate(y_pre, axis=0)
     preds[preds < 0 ] = 0
     preds = preds.astype(int)
+    x_test["order"][x_test["order"] < 0] = 0
+    x_test["order"] = x_test["order"].astype(int)
 
     x_train = pd.concat([x_train, x_test])
     
+    if x_test["weekDay"].iloc[0] == 7:
+        train_day = x_train[x_train["weekDay"] == 0]
+    else:
+        train_day = x_train[x_train["weekDay"] == x_test["weekDay"].iloc[0]]
+    
+    y_train_day = train_day.pop('order')
     y_train = x_train.pop('order')
     y_test = x_test.pop('order')
     print("---------------"+'\n')
@@ -222,8 +291,35 @@ equals = equals.dropna()
 print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
 print(score.describe())
 
+print("Bruno Style Score:")
+w = pd.DataFrame(w)
+w = np.array(w["recommendedRetailPrice"])
+
+x_train["order"] = 0
+aux = x_train[['order', 'itemID']].groupby('itemID').agg({'order':'sum'}).rename(columns={"order": "orderSum"}).astype(int)
+for i in range(0, days): 
+    aux['orderSum'] = aux['orderSum'] + preds[i].astype(int)
+aux = aux.fillna(0)
+x_train = x_train.merge(aux, how="left", on="itemID")
+x_train['order'] = x_train.pop('orderSum').astype(int)
+
+future = train[(train["date"] > pd.to_datetime("2018-06-16")) & (train["date"] <= pd.to_datetime("2018-06-29"))]
+future = future.groupby("itemID")["order"].sum()
+
+preds = x_train[((x_train["day"] > 16) & (x_train["month"] == 6))]
+preds = preds.groupby("itemID")["order"].sum()
+
+#dif = pd.DataFrame(sumPreds - future) 
+preds = np.array(preds)
+preds[preds < 0 ] = 0
+#preds[preds > 5 ] = preds[preds > 5 ] * 4
+future = np.array(future)
+score = preds * w
+score[(future - preds) < 0] = (future[(future - preds) < 0] - preds[(future - preds) < 0]) * (0.6 * w[(future - preds) < 0])
+print(sum(score))
+
 print("Saving Results..."+'\n')
-preds.to_csv("out/lstm.csv")
+#pd.DataFrame(preds).to_csv("out/lstm.csv")
 
 print("   - THE END -   "+'\n')
 
