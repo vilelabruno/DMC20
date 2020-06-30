@@ -198,7 +198,7 @@ print('Exact Predictions: '+str(len(equals))+' of '+str(len(preds))+'\n')
 print(score.describe())
 
 print("Score with multiplier:"+'\n')
-preds = preds * 1.5
+preds = preds * 1.3
 for i in range(0, 14): 
     score[i] = w_test * preds[i] 
     score[i][(Y_TEST[i] - preds[i]) < 0] = 0.6 * w_test[(Y_TEST[i] - preds[i]) < 0] * (Y_TEST[i][(Y_TEST[i] - preds[i]) < 0] - preds[i][(Y_TEST[i] - preds[i]) < 0]) 
