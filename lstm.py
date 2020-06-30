@@ -128,7 +128,6 @@ days = 14
 n_epochs = 1
 for i in range(0, days):
     print("---- DAY "+str(i)+" ----")
-    x_train = pd.concat([x_train, x_test])
     x_test["day"] = x_test["day"]+1
     if x_test["weekDay"].iloc[0] == 6:
         x_test["weekNumber"] = x_test["weekNumber"] + 1 
@@ -181,6 +180,8 @@ for i in range(0, days):
     preds[preds < 0 ] = 0
     preds = preds.astype(int)
 
+    x_train = pd.concat([x_train, x_test])
+    
     y_train = x_train.pop('order')
     y_test = x_test.pop('order')
     print("---------------"+'\n')
